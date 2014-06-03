@@ -222,6 +222,7 @@
               xhr.setRequestHeader("Accept", "application/json");
             },
             url: this.options.remote_source,
+            dataType: "json",
             data: this.options.createQuery(query),
             success: success
           });
