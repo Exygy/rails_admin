@@ -49,12 +49,12 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
   end
 
   it 'lists associations' do
-    expect(@post.associations.collect { |a|a.name.to_s }).to include(*%w[a_r_blog a_r_categories a_r_comments])
+    expect(@post.associations.collect { |a|a.name.to_s }).to include(*%w(a_r_blog a_r_categories a_r_comments))
   end
 
   it 'list associations types in supported [:belongs_to, :has_and_belongs_to_many, :has_many, :has_one]' do
     # ActiveRecord 4.1 converts has_and_belongs_to_many association to has_many
-    expect((@post.associations + @blog.associations + @user.associations).collect { |a| a.type }.uniq.collect(&:to_s)).to include(*%w[belongs_to has_many has_one])
+    expect((@post.associations + @blog.associations + @user.associations).collect(&:type).uniq.collect(&:to_s)).to include(*%w(belongs_to has_many has_one))
   end
 
   describe 'belongs_to association' do
@@ -68,9 +68,9 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
       expect(subject.foreign_key).to eq :a_r_blog_id
       expect(subject.foreign_type).to be_nil
       expect(subject.as).to be_nil
-      expect(subject.polymorphic?).to be_false
+      expect(subject.polymorphic?).to be_falsey
       expect(subject.inverse_of).to be_nil
-      expect(subject.read_only?).to be_false
+      expect(subject.read_only?).to be_falsey
       expect(subject.nested_options).to be_nil
     end
   end
@@ -86,10 +86,44 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
       expect(subject.foreign_key).to eq :ar_blog_id
       expect(subject.foreign_type).to be_nil
       expect(subject.as).to be_nil
-      expect(subject.polymorphic?).to be_false
+      expect(subject.polymorphic?).to be_falsey
       expect(subject.inverse_of).to be_nil
-      expect(subject.read_only?).to be_false
+      expect(subject.read_only?).to be_falsey
       expect(subject.nested_options).to be_nil
+    end
+  end
+
+  describe 'has_many association' do
+    let(:league) { RailsAdmin::AbstractModel.new(League) }
+
+    context 'for direct has many' do
+      let(:association) { league.associations.detect { |a| a.name == :divisions } }
+
+      it 'returns correct values' do
+        expect(association.type).to eq :has_many
+        expect(association.klass).to eq Division
+        expect(association.read_only?).to be_falsey
+      end
+    end
+
+    context 'for has many through marked as readonly' do
+      let(:association) { league.associations.detect { |a| a.name == :teams } }
+
+      it 'returns correct values' do
+        expect(association.type).to eq :has_many
+        expect(association.klass).to eq Team
+        expect(association.read_only?).to be_truthy
+      end
+    end
+
+    context 'for has many through multiple associations' do
+      let(:association) { league.associations.detect { |a| a.name == :players } }
+
+      it 'returns correct values' do
+        expect(association.type).to eq :has_many
+        expect(association.klass).to eq Player
+        expect(association.read_only?).to be_truthy
+      end
     end
   end
 
@@ -102,15 +136,15 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
       expect(subject.primary_key).to eq :id
       expect(subject.foreign_type).to be_nil
       expect(subject.as).to be_nil
-      expect(subject.polymorphic?).to be_false
+      expect(subject.polymorphic?).to be_falsey
       expect(subject.inverse_of).to be_nil
-      expect(subject.read_only?).to be_false
+      expect(subject.read_only?).to be_falsey
       expect(subject.nested_options).to be_nil
     end
   end
 
   describe 'polymorphic belongs_to association' do
-    before { allow(RailsAdmin::Config).to receive(:models_pool).and_return(%w[ARBlog ARPost ARCategory ARUser ARProfile ARComment]) }
+    before { allow(RailsAdmin::Config).to receive(:models_pool).and_return(%w(ARBlog ARPost ARCategory ARUser ARProfile ARComment)) }
     subject { @comment.associations.select { |a| a.name == :commentable }.first }
 
     it 'returns correct values' do
@@ -121,9 +155,9 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
       expect(subject.foreign_key).to eq :commentable_id
       expect(subject.foreign_type).to eq :commentable_type
       expect(subject.as).to be_nil
-      expect(subject.polymorphic?).to be_true
+      expect(subject.polymorphic?).to be_truthy
       expect(subject.inverse_of).to be_nil
-      expect(subject.read_only?).to be_false
+      expect(subject.read_only?).to be_falsey
       expect(subject.nested_options).to be_nil
     end
 
@@ -144,9 +178,9 @@ describe 'RailsAdmin::Adapters::ActiveRecord::Association', active_record: true 
       expect(subject.foreign_key).to eq :commentable_id
       expect(subject.foreign_type).to be_nil
       expect(subject.as).to eq :commentable
-      expect(subject.polymorphic?).to be_false
+      expect(subject.polymorphic?).to be_falsey
       expect(subject.inverse_of).to be_nil
-      expect(subject.read_only?).to be_false
+      expect(subject.read_only?).to be_falsey
       expect(subject.nested_options).to be_nil
     end
   end

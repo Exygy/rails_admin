@@ -11,18 +11,18 @@ module RailsAdmin
       ObjectId = defined?(Moped::BSON) ? Moped::BSON::ObjectId : BSON::ObjectId # rubocop:disable ConstantName
 
       def new(params = {})
-        AbstractObject.new(model.new)
+        AbstractObject.new(model.new(params))
       end
 
       def get(id)
         AbstractObject.new(model.find(id))
       rescue => e
-        raise e if %w[
+        raise e if %w(
           BSON::InvalidObjectId
           Mongoid::Errors::DocumentNotFound
           Mongoid::Errors::InvalidFind
           Moped::Errors::InvalidObjectId
-        ].exclude?(e.class.to_s)
+        ).exclude?(e.class.to_s)
       end
 
       def scoped
@@ -66,8 +66,8 @@ module RailsAdmin
       end
 
       def properties
-        fields = model.fields.reject { |name, field| DISABLED_COLUMN_TYPES.include?(field.type.to_s) }
-        fields.collect do |name, field|
+        fields = model.fields.reject { |_name, field| DISABLED_COLUMN_TYPES.include?(field.type.to_s) }
+        fields.collect do |_name, field|
           Property.new(field, model)
         end
       end
@@ -103,10 +103,9 @@ module RailsAdmin
         field.searchable_columns.each do |column_infos|
           collection_name, column_name = parse_collection_name(column_infos[:column])
           statement = build_statement(column_name, column_infos[:type], value, operator)
-          if statement
-            conditions_per_collection[collection_name] ||= []
-            conditions_per_collection[collection_name] << statement
-          end
+          next unless statement
+          conditions_per_collection[collection_name] ||= []
+          conditions_per_collection[collection_name] << statement
         end
         conditions_per_collection
       end
@@ -216,7 +215,7 @@ module RailsAdmin
             '_null' => {@column => nil},
             '_not_null' => {@column => {'$ne' => nil}},
             '_empty' => {@column => ''},
-            '_not_empty' => {@column => {'$ne' => ''}}
+            '_not_empty' => {@column => {'$ne' => ''}},
           }
         end
 
@@ -233,8 +232,8 @@ module RailsAdmin
         end
 
         def build_statement_for_boolean
-          return {@column => false} if %w[false f 0].include?(@value)
-          return {@column => true} if %w[true t 1].include?(@value)
+          return {@column => false} if %w(false f 0).include?(@value)
+          return {@column => true} if %w(true t 1).include?(@value)
         end
 
         def column_for_value(value)
@@ -243,17 +242,19 @@ module RailsAdmin
 
         def build_statement_for_string_or_text
           return if @value.blank?
-          @value = case @operator
-          when 'default', 'like'
-            Regexp.compile(Regexp.escape(@value), Regexp::IGNORECASE)
-          when 'starts_with'
-            Regexp.compile("^#{Regexp.escape(@value)}", Regexp::IGNORECASE)
-          when 'ends_with'
-            Regexp.compile("#{Regexp.escape(@value)}$", Regexp::IGNORECASE)
-          when 'is', '='
-            @value.to_s
-          else
-            return
+          @value = begin
+            case @operator
+            when 'default', 'like'
+              Regexp.compile(Regexp.escape(@value), Regexp::IGNORECASE)
+            when 'starts_with'
+              Regexp.compile("^#{Regexp.escape(@value)}", Regexp::IGNORECASE)
+            when 'ends_with'
+              Regexp.compile("#{Regexp.escape(@value)}$", Regexp::IGNORECASE)
+            when 'is', '='
+              @value.to_s
+            else
+              return
+            end
           end
           {@column => @value}
         end

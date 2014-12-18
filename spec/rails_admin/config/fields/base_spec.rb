@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe RailsAdmin::Config::Fields::Base do
-
   describe '#required' do
     it 'reads the on: :create/:update validate option' do
       RailsAdmin.config Ball do
@@ -54,13 +53,13 @@ describe RailsAdmin::Config::Fields::Base do
 
     context 'of a Paperclip installation' do
       it 'is a _file_name field' do
-        expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :paperclip_asset }.children_fields.include?(:paperclip_asset_file_name)).to be_true
+        expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :paperclip_asset }.children_fields.include?(:paperclip_asset_file_name)).to be_truthy
       end
 
       it 'is hidden, not filterable' do
         field = RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :paperclip_asset_file_name }
-        expect(field.hidden?).to be_true
-        expect(field.filterable?).to be_false
+        expect(field.hidden?).to be_truthy
+        expect(field.filterable?).to be_falsey
       end
     end
 
@@ -73,7 +72,7 @@ describe RailsAdmin::Config::Fields::Base do
     context 'of a Carrierwave installation' do
       it 'is the parent field itself' do
         expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :carrierwave_asset }.children_fields).to eq([:carrierwave_asset])
-        expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :carrierwave_asset }.hidden?).to be_false
+        expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :carrierwave_asset }.hidden?).to be_falsey
       end
     end
   end
@@ -151,14 +150,14 @@ describe RailsAdmin::Config::Fields::Base do
 
   describe '#associated_collection_cache_all' do
     it 'defaults to true if associated collection count < 100' do
-      expect(RailsAdmin.config(Team).edit.fields.detect { |f| f.name == :players }.associated_collection_cache_all).to be_true
+      expect(RailsAdmin.config(Team).edit.fields.detect { |f| f.name == :players }.associated_collection_cache_all).to be_truthy
     end
 
     it 'defaults to false if associated collection count >= 100' do
       @players = 100.times.collect do
         FactoryGirl.create :player
       end
-      expect(RailsAdmin.config(Team).edit.fields.detect { |f| f.name == :players }.associated_collection_cache_all).to be_false
+      expect(RailsAdmin.config(Team).edit.fields.detect { |f| f.name == :players }.associated_collection_cache_all).to be_falsey
     end
   end
 
@@ -197,7 +196,6 @@ describe RailsAdmin::Config::Fields::Base do
     end
 
     describe 'for basic type fields' do
-
       it 'uses base table and find correct column type' do
         expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :text_field }.searchable_columns).to eq([{column: 'field_tests.text_field', type: :text}])
         expect(RailsAdmin.config(FieldTest).fields.detect { |f| f.name == :integer_field }.searchable_columns).to eq([{column: 'field_tests.integer_field', type: :integer}])
@@ -253,10 +251,10 @@ describe RailsAdmin::Config::Fields::Base do
         field :name
       end
       @league = FactoryGirl.create :league
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.sortable).to be_false
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.searchable).to be_false
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.sortable).to be_true
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.searchable).to be_true
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.sortable).to be_falsey
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.searchable).to be_falsey
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.sortable).to be_truthy
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.searchable).to be_truthy
     end
 
     context 'of a virtual field with children fields' do
@@ -284,8 +282,8 @@ describe RailsAdmin::Config::Fields::Base do
         field :name
       end
       @league = FactoryGirl.create :league
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.virtual?).to be_true
-      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.virtual?).to be_false
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :virtual_column }.virtual?).to be_truthy
+      expect(RailsAdmin.config('League').export.fields.detect { |f| f.name == :name }.virtual?).to be_falsey
     end
   end
 
@@ -296,7 +294,7 @@ describe RailsAdmin::Config::Fields::Base do
 
     context 'when no search operator is specified for the field' do
       it "uses 'default' search operator" do
-        expect(queryable_fields).to have_at_least(1).field
+        expect(queryable_fields.size).to be >= 1
         expect(queryable_fields.first.search_operator).to eq(RailsAdmin::Config.default_search_operator)
       end
 
@@ -304,7 +302,7 @@ describe RailsAdmin::Config::Fields::Base do
         RailsAdmin.config do |config|
           config.default_search_operator = 'starts_with'
         end
-        expect(queryable_fields).to have_at_least(1).field
+        expect(queryable_fields.size).to be >= 1
         expect(queryable_fields.first.search_operator).to eq(RailsAdmin::Config.default_search_operator)
       end
     end
@@ -318,7 +316,7 @@ describe RailsAdmin::Config::Fields::Base do
             end
           end
         end
-        expect(queryable_fields).to have_at_least(1).field
+        expect(queryable_fields.size).to be >= 1
         expect(queryable_fields.first.search_operator).to eq('starts_with')
       end
 
@@ -334,7 +332,7 @@ describe RailsAdmin::Config::Fields::Base do
             end
           end
         end
-        expect(queryable_fields).to have_at_least(1).field
+        expect(queryable_fields.size).to be >= 1
         expect(queryable_fields.first.search_operator).to eq('ends_with')
       end
     end
@@ -355,7 +353,7 @@ describe RailsAdmin::Config::Fields::Base do
 
   describe '#active' do
     it 'is false by default' do
-      expect(RailsAdmin.config(Team).field(:division).active?).to be_false
+      expect(RailsAdmin.config(Team).field(:division).active?).to be_falsey
     end
   end
 
@@ -379,10 +377,10 @@ describe RailsAdmin::Config::Fields::Base do
         column :updated_on, :datetime
         column :deleted_on, :datetime
       end
-      expect(RailsAdmin.config(FieldVisibilityTest).base.fields.select { |f| f.visible? }.collect(&:name)).to match_array [:_id, :created_at, :created_on, :deleted_at, :deleted_on, :id, :name, :updated_at, :updated_on]
-      expect(RailsAdmin.config(FieldVisibilityTest).list.fields.select { |f| f.visible? }.collect(&:name)).to match_array [:_id, :created_at, :created_on, :deleted_at, :deleted_on, :id, :name, :updated_at, :updated_on]
-      expect(RailsAdmin.config(FieldVisibilityTest).edit.fields.select { |f| f.visible? }.collect(&:name)).to match_array [:name]
-      expect(RailsAdmin.config(FieldVisibilityTest).show.fields.select { |f| f.visible? }.collect(&:name)).to match_array [:name]
+      expect(RailsAdmin.config(FieldVisibilityTest).base.fields.select(&:visible?).collect(&:name)).to match_array [:_id, :created_at, :created_on, :deleted_at, :deleted_on, :id, :name, :updated_at, :updated_on]
+      expect(RailsAdmin.config(FieldVisibilityTest).list.fields.select(&:visible?).collect(&:name)).to match_array [:_id, :created_at, :created_on, :deleted_at, :deleted_on, :id, :name, :updated_at, :updated_on]
+      expect(RailsAdmin.config(FieldVisibilityTest).edit.fields.select(&:visible?).collect(&:name)).to match_array [:name]
+      expect(RailsAdmin.config(FieldVisibilityTest).show.fields.select(&:visible?).collect(&:name)).to match_array [:name]
     end
   end
 

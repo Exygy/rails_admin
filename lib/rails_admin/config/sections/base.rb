@@ -2,6 +2,7 @@ require 'rails_admin/config/proxyable'
 require 'rails_admin/config/configurable'
 require 'rails_admin/config/has_fields'
 require 'rails_admin/config/has_groups'
+require 'rails_admin/config/has_description'
 
 module RailsAdmin
   module Config
@@ -13,6 +14,7 @@ module RailsAdmin
 
         include RailsAdmin::Config::HasFields
         include RailsAdmin::Config::HasGroups
+        include RailsAdmin::Config::HasDescription
 
         attr_reader :abstract_model
         attr_reader :parent, :root
@@ -37,7 +39,7 @@ module RailsAdmin
               else
                 "#{v}=#{value.inspect}"
               end
-            end.join(", ")
+            end.join(', ')
           }>"
         end
       end

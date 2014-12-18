@@ -27,7 +27,7 @@ module RailsAdmin
       def polymorphic_parents(adapter, model_name, name)
         @@polymorphic_parents[adapter.to_sym] ||= {}.tap do |hash|
           all(adapter).each do |am|
-            am.associations.select { |r| r.as }.each do |association|
+            am.associations.select(&:as).each do |association|
               (hash[[association.klass.to_s.underscore, association.as].join('_').to_sym] ||= []) << am.model
             end
           end
@@ -131,11 +131,13 @@ module RailsAdmin
       end
 
       def build_statement_for_type_generic
-        build_statement_for_type || case @type
-        when :date
-          build_statement_for_date
-        when :datetime, :timestamp
-          build_statement_for_datetime_or_timestamp
+        build_statement_for_type || begin
+          case @type
+          when :date
+            build_statement_for_date
+          when :datetime, :timestamp
+            build_statement_for_datetime_or_timestamp
+          end
         end
       end
 
@@ -147,9 +149,8 @@ module RailsAdmin
         case @value
         when Array then
           val, range_begin, range_end = *@value.collect do |v|
-            if v.to_i.to_s == v || v.to_f.to_s == v
-              @type == :integer ? v.to_i : v.to_f
-            end
+            next unless v.to_i.to_s == v || v.to_f.to_s == v
+            @type == :integer ? v.to_i : v.to_f
           end
           case @operator
           when 'between'
@@ -179,7 +180,7 @@ module RailsAdmin
         fail('You must override unary_operators in your StatementBuilder')
       end
 
-      def range_filter(min, max)
+      def range_filter(_min, _max)
         fail('You must override range_filter in your StatementBuilder')
       end
 

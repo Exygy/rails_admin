@@ -7,9 +7,19 @@ module RailsAdmin
         @entity = entity
         @deferred_blocks = block ? [ block ] : []
       end
+
       def add_deferred_block(&block)
         @deferred_blocks << block
       end
+
+      def target
+        unless @model
+          @model = RailsAdmin::Config::Model.new(@entity)
+          @model.instance_eval(&@deferred_block) if @deferred_block
+        end
+        @model
+      end
+
       def method_missing(method, *args, &block)
         unless @model
           @model = RailsAdmin::Config::Model.new(@entity)
@@ -44,10 +54,14 @@ module RailsAdmin
           # to guarantee that blocks from 'config/initializers' evaluate before
           # blocks defined within a model class.
           @deferred_blocks.flatten.sort_by{|p| p.source_location.first =~ /config\/initializers/ ? 0 : 1}.each do |block|
-            @model.instance_eval(&block)
+            target.instance_eval(&block)
           end
         end
-        @model.send(method, *args, &block)
+        target.send(method, *args, &block)
+      end
+
+      def respond_to?(method, include_private = false)
+        super || target.respond_to?(method, include_private)
       end
     end
   end

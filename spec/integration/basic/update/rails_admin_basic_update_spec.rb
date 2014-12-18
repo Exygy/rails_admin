@@ -1,7 +1,6 @@
 require 'spec_helper'
 
-describe 'RailsAdmin Basic Update' do
-
+describe 'RailsAdmin Basic Update', type: :request do
   subject { page }
 
   describe 'update with errors' do
@@ -14,7 +13,7 @@ describe 'RailsAdmin Basic Update' do
       fill_in 'player[name]', with: ''
       click_button 'Save' # first(:button, "Save").click
       expect(page.driver.status_code).to eq(406)
-      should have_selector "form[action='#{edit_path(model_name: "player", id: @player.id)}']"
+      is_expected.to have_selector "form[action='#{edit_path(model_name: 'player', id: @player.id)}']"
     end
   end
 
@@ -160,7 +159,7 @@ describe 'RailsAdmin Basic Update' do
     end
 
     it 'saves the serialized data' do
-      expect(@user.roles).to eq(%w[admin user])
+      expect(@user.roles).to eq(%w(admin user))
     end
   end
 
@@ -225,5 +224,4 @@ describe 'RailsAdmin Basic Update' do
       expect(@hardball.color).to eq('cyan')
     end
   end
-
 end

@@ -1,15 +1,10 @@
 require 'spec_helper'
 
-describe 'RailsAdmin Config DSL Show Section' do
+describe 'RailsAdmin Config DSL Show Section', type: :request do
   subject { page }
   let(:team) { FactoryGirl.create :team }
 
   def do_request
-    # tests were done with compact_show_view being false
-    RailsAdmin.config do |c|
-      c.compact_show_view = false
-    end
-
     visit show_path(model_name: 'team', id: team.id)
   end
 
@@ -27,16 +22,14 @@ describe 'RailsAdmin Config DSL Show Section' do
     end
 
     it 'contains the JSONified object' do
-      expect(body).to include(@player.reload.to_json)
+      expect(JSON.parse(body)).to eq JSON.parse @player.reload.to_json
     end
   end
 
   describe 'compact_show_view' do
-
     it 'hides empty fields in show view by default' do
-      @player = FactoryGirl.create :player
-      visit show_path(model_name: 'league', id: @player.id)
-      should_not have_css('.born_on_field')
+      do_request
+      is_expected.not_to have_css('.logo_url_field')
     end
 
     it 'is disactivable' do
@@ -44,15 +37,14 @@ describe 'RailsAdmin Config DSL Show Section' do
         c.compact_show_view = false
       end
 
-      @player = FactoryGirl.create :player
-      visit show_path(model_name: 'player', id: @player.id)
-      should have_css('.born_on_field')
+      do_request
+      is_expected.to have_css('.logo_url_field')
     end
   end
 
   describe 'bindings' do
     it 'should be present' do
-      RailsAdmin.config Team do |c|
+      RailsAdmin.config Team do |_c|
         show do
           field :name do
             show do
@@ -64,7 +56,7 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('dt .name_field.string_type')
+      is_expected.to have_selector('dt .name_field.string_type')
     end
   end
 
@@ -72,11 +64,17 @@ describe 'RailsAdmin Config DSL Show Section' do
     it 'is present' do
       do_request
 
-      should have_selector('dt .name_field.string_type')
+      is_expected.to have_selector('dt .name_field.string_type')
     end
   end
 
   describe 'field groupings' do
+    before do
+      RailsAdmin.config do |c|
+        c.compact_show_view = false
+      end
+    end
+
     it 'is hideable' do
       RailsAdmin.config Team do
         show do
@@ -88,13 +86,13 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should_not have_selector('h4', text: 'Basic info')
+      is_expected.not_to have_selector('h4', text: 'Basic info')
 
-      %w[division name logo_url manager
+      %w(division name logo_url manager
          ballpark mascot founded wins
          losses win_percentage revenue
-      ].each do |field|
-        should_not have_selector(".#{field}_field")
+      ).each do |field|
+        is_expected.not_to have_selector(".#{field}_field")
       end
     end
 
@@ -109,7 +107,7 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should_not have_selector('h4', text: 'Players')
+      is_expected.not_to have_selector('h4', text: 'Players')
     end
 
     it 'is renameable' do
@@ -123,7 +121,7 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('h4', text: 'Renamed group')
+      is_expected.to have_selector('h4', text: 'Renamed group')
     end
 
     it 'has accessor for its fields' do
@@ -142,12 +140,12 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('h4', text: 'Basic info')
-      should have_selector('h4', text: "Belong's to associations")
+      is_expected.to have_selector('h4', text: 'Basic info')
+      is_expected.to have_selector('h4', text: "Belong's to associations")
 
-      should have_selector('.name_field')
-      should have_selector('.logo_url_field')
-      should have_selector('.division_field')
+      is_expected.to have_selector('.name_field')
+      is_expected.to have_selector('.logo_url_field')
+      is_expected.to have_selector('.division_field')
     end
 
     it 'has accessor for its fields by type' do
@@ -170,24 +168,29 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('.label', text: 'Name')
-      should have_selector('.label', text: 'Logo url')
-      should have_selector('.label', text: 'Division')
-      should have_selector('.label', text: 'Manager (STRING)')
-      should have_selector('.label', text: 'Ballpark (STRING)')
+      is_expected.to have_selector('.label', text: 'Name')
+      is_expected.to have_selector('.label', text: 'Logo url')
+      is_expected.to have_selector('.label', text: 'Division')
+      is_expected.to have_selector('.label', text: 'Manager (STRING)')
+      is_expected.to have_selector('.label', text: 'Ballpark (STRING)')
     end
   end
 
   describe "items' fields" do
+    before do
+      RailsAdmin.config do |c|
+        c.compact_show_view = false
+      end
+    end
 
     it 'shows all by default' do
       do_request
 
-      %w[division name logo_url manager
+      %w(division name logo_url manager
          ballpark mascot founded wins
          losses win_percentage revenue players fans
-      ].each do |field|
-        should have_selector(".#{field}_field")
+      ).each do |field|
+        is_expected.to have_selector(".#{field}_field")
       end
     end
 
@@ -202,9 +205,9 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('.manager_field')
-      should have_selector('.division_field')
-      should have_selector('.name_field')
+      is_expected.to have_selector('.manager_field')
+      is_expected.to have_selector('.division_field')
+      is_expected.to have_selector('.name_field')
     end
 
     it 'delegates the label option to the ActiveModel API' do
@@ -217,8 +220,8 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('.label', text: 'Team Manager')
-      should have_selector('.label', text: 'Some Fans')
+      is_expected.to have_selector('.label', text: 'Team Manager')
+      is_expected.to have_selector('.label', text: 'Some Fans')
     end
 
     it 'is renameable' do
@@ -234,9 +237,9 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('.label', text: 'Renamed field')
-      should have_selector('.label', text: 'Division')
-      should have_selector('.label', text: 'Name')
+      is_expected.to have_selector('.label', text: 'Renamed field')
+      is_expected.to have_selector('.label', text: 'Division')
+      is_expected.to have_selector('.label', text: 'Name')
     end
 
     it 'is renameable by type' do
@@ -254,7 +257,7 @@ describe 'RailsAdmin Config DSL Show Section' do
        'Ballpark (STRING)', 'Mascot (STRING)', 'Founded', 'Wins', 'Losses',
        'Win percentage', 'Revenue', 'Players', 'Fans'
       ].each do |text|
-        should have_selector('.label', text: text)
+        is_expected.to have_selector('.label', text: text)
       end
     end
 
@@ -273,7 +276,7 @@ describe 'RailsAdmin Config DSL Show Section' do
        'Ballpark (STRING)', 'Mascot (STRING)', 'Founded', 'Wins', 'Losses',
        'Win percentage', 'Revenue', 'Players', 'Fans'
       ].each do |text|
-        should have_selector('.label', text: text)
+        is_expected.to have_selector('.label', text: text)
       end
     end
 
@@ -290,8 +293,8 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      should have_selector('.division_field')
-      should have_selector('.name_field')
+      is_expected.to have_selector('.division_field')
+      is_expected.to have_selector('.name_field')
     end
 
     it 'is hideable by type' do
@@ -305,12 +308,12 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      %w[Name Logo\ url Manager Ballpark Mascot].each do |text|
-        should_not have_selector('.label', text: text)
+      %w(Name Logo\ url Manager Ballpark Mascot).each do |text|
+        is_expected.not_to have_selector('.label', text: text)
       end
 
-      %w[Division Founded Wins Losses Win\ percentage Revenue Players Fans].each do |text|
-        should have_selector('.label', text: text)
+      %w(Division Founded Wins Losses Win\ percentage Revenue Players Fans).each do |text|
+        is_expected.to have_selector('.label', text: text)
       end
     end
 
@@ -325,12 +328,12 @@ describe 'RailsAdmin Config DSL Show Section' do
 
       do_request
 
-      %w[Name Logo\ url Manager Ballpark Mascot].each do |text|
-        should_not have_selector('.label', text: text)
+      %w(Name Logo\ url Manager Ballpark Mascot).each do |text|
+        is_expected.not_to have_selector('.label', text: text)
       end
 
-      %w[Division Founded Wins Losses Win\ percentage Revenue Players Fans].each do |text|
-        should have_selector('.label', text: text)
+      %w(Division Founded Wins Losses Win\ percentage Revenue Players Fans).each do |text|
+        is_expected.to have_selector('.label', text: text)
       end
     end
   end
@@ -340,8 +343,50 @@ describe 'RailsAdmin Config DSL Show Section' do
       @record = FactoryGirl.create :field_test
       2.times.each { |i| @record.embeds.create name: "embed #{i}" }
       visit show_path(model_name: 'field_test', id: @record.id)
-      should_not have_link('embed 0')
-      should_not have_link('embed 1')
+      is_expected.not_to have_link('embed 0')
+      is_expected.not_to have_link('embed 1')
+    end
+  end
+
+  describe 'virtual field' do
+    let(:team) { FactoryGirl.create :team, name: 'foobar' }
+    context 'with formatted_value defined' do
+      before do
+        RailsAdmin.config Team do
+          show do
+            field :truncated_name do
+              formatted_value do
+                bindings[:object].name.truncate(5)
+              end
+            end
+          end
+        end
+      end
+
+      it 'shows up correctly' do
+        do_request
+
+        is_expected.to have_selector('.truncated_name_field')
+        is_expected.to have_selector('dd', text: 'fo...')
+      end
+    end
+
+    context 'without formatted_value' do
+      before do
+        RailsAdmin.config Team do
+          show do
+            field :truncated_name do
+              pretty_value do
+                bindings[:object].name.truncate(5)
+              end
+            end
+          end
+        end
+      end
+
+      it 'raises error along with suggestion' do
+        expect { do_request }.to raise_error(/you should declare 'formatted_value'/)
+      end
     end
   end
 end
