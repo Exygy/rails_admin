@@ -23,6 +23,15 @@ describe 'RailsAdmin Basic Edit', type: :request do
       expect(find('#player_born_on_field .help-block')).to have_content('Optional')
       expect(find('#player_notes_field .help-block')).to have_content('Optional')
     end
+
+    it 'checks required fields to have required attribute set' do
+      expect(find_field('player_name')[:required].nil?).to eq(false)
+      expect(find_field('player_number')[:required].nil?).to eq(false)
+    end
+
+    it 'checks optional fields to not have required attribute set' do
+      expect(find_field('player_position')[:required].nil?).to eq(true)
+    end
   end
 
   describe 'association with inverse_of option' do
@@ -103,10 +112,17 @@ describe 'RailsAdmin Basic Edit', type: :request do
   end
 
   describe 'clicking cancel when editing an object' do
-    it 'sends back to previous URL' do
+    before do
       @ball = FactoryGirl.create :ball
       visit '/admin/ball?sort=color'
       click_link 'Edit'
+    end
+
+    it "shows cancel button with 'novalidate' attribute" do
+      expect(page).to have_css '[type="submit"][name="_continue"][formnovalidate]'
+    end
+
+    it 'sends back to previous URL' do
       click_button 'Cancel'
       expect(page.current_url).to eq('http://www.example.com/admin/ball?sort=color')
     end
